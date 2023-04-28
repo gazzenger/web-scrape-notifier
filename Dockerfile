@@ -1,4 +1,6 @@
-FROM node:16.14.0-slim as node-builder
+FROM node:14-slim
+# FROM node:16.14.0-slim as node-builder
+# https://github.com/puppeteer/puppeteer/blob/main/docs/troubleshooting.md#running-puppeteer-in-docker
 
 # Install latest chrome dev package and fonts to support major charsets (Chinese, Japanese, Arabic, Hebrew, Thai and a few others)
 # Note: this installs the necessary libs to make the bundled version of Chromium that Puppeteer
@@ -12,6 +14,10 @@ RUN apt-get update \
       --no-install-recommends \
     && rm -rf /var/lib/apt/lists/*
 
+WORKDIR /app
+COPY . ./
+RUN npm ci
+
 # If running Docker >= 1.13.0 use docker run's --init arg to reap zombie processes, otherwise
 # uncomment the following lines to have `dumb-init` as PID 1
 # ADD https://github.com/Yelp/dumb-init/releases/download/v1.2.2/dumb-init_1.2.2_x86_64 /usr/local/bin/dumb-init
@@ -24,6 +30,7 @@ RUN apt-get update \
 # ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD true
 
 # Install puppeteer so it's available in the container.
+WORKDIR /
 RUN npm init -y &&  \
     npm i puppeteer \
     # Add user so we don't need --no-sandbox.
@@ -38,8 +45,7 @@ RUN npm init -y &&  \
 # Run everything after as non-privileged user.
 USER pptruser
 
-CMD ["google-chrome-stable"]
+# CMD ["google-chrome-stable"]
 
-# COPY . ./
-# RUN npm ci
-# CMD ["/app/entrypoint.sh"]
+
+CMD ["google-chrome-stable", "/app/entrypoint.sh"]
