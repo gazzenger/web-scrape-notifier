@@ -2,7 +2,7 @@ version: "3.9"
 
 services:
   web-scrape-notifier:
-    container_name: ${CONTAINER_SUFFIX}
+    container_name: web-scrape-notifier
     image: web-scrape-notifier:latest
     #restart: always
     tty: true
@@ -11,4 +11,4 @@ services:
 
 networks:
   frontend:
-    name: ${CONTAINER_EXTERNAL_NETWORK}
+    name: web-scrape-notifier-net
