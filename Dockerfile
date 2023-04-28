@@ -1,6 +1,6 @@
 FROM node:16.14.0-slim as node-builder
 WORKDIR /app
-RUN apt-get install -y \
+RUN apt-get update && apt-get install -y \
     fonts-liberation \
     gconf-service \
     libappindicator1 \
