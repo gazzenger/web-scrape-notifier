@@ -131,7 +131,15 @@ const waitTillHTMLRendered = async (page, timeout = 30000) => {
 };
 
 const renderHtml = async (url, selector) => {
-  const browser = await puppeteer.launch({headless: true});
+  const browser = await puppeteer.launch({
+    headless: true,
+    args: [
+        "--disable-gpu",
+        "--disable-dev-shm-usage",
+        "--disable-setuid-sandbox",
+        "--no-sandbox",
+    ]
+  });
   const page = await browser.newPage();
 
   await page.goto(url,{'timeout': 100000, 'waitUntil':'load'});

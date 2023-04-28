@@ -6,9 +6,3 @@ services:
     image: web-scrape-notifier:latest
     #restart: always
     tty: true
-    networks:
-      - frontend
-
-networks:
-  frontend:
-    name: web-scrape-notifier-net
