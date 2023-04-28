@@ -15,22 +15,22 @@ RUN apt-get install -y \
     libicu-dev \
     libjpeg-dev \
     libnspr4 \
-    libnss3 
+    libnss3 \
     libpango-1.0-0 \
     libpangocairo-1.0-0 \
     libpng-dev \
     libx11-6 \
     libx11-xcb1 \
-    libxcb1 
+    libxcb1 \
     libxcomposite1 \
     libxcursor1 \
     libxdamage1 \
     libxext6 \
     libxfixes3 \
-    libxi6 
+    libxi6 \
     libxrandr2 \
     libxrender1 \
-    libxss1 
+    libxss1 \
     libxtst6 \
     xdg-utils
 COPY . ./
