@@ -1,4 +1,5 @@
 import puppeteer from 'puppeteer';
+import { existsSync } from 'fs';
 import { readFile, writeFile } from 'fs/promises';
 
 import nodemailer from 'nodemailer';
@@ -133,7 +134,7 @@ const waitTillHTMLRendered = async (page, timeout = 30000) => {
 const renderHtml = async (url, selector) => {
   const browser = await puppeteer.launch({
     headless: true,
-    executablePath: '/usr/bin/google-chrome',
+    executablePath: '/usr/bin/chromium-browser',
     args: [
         "--disable-gpu",
         "--disable-dev-shm-usage",
@@ -155,8 +156,16 @@ const renderHtml = async (url, selector) => {
 }
 
 (async () => {
+  if(!existsSync('list.csv')) {
+    console.log("list.csv file not found");
+    return;
+  }
   const configData = await parseCSV('list.csv', 'utf8', ['url','selector','email']);
-  const resultData = await parseCSV('result.csv', 'utf8', ['url','result']);
+  
+  let resultData = [];
+  if(existsSync('result.csv')) {
+    resultData = await parseCSV('result.csv', 'utf8', ['url','result']);
+  }
 
   const newResults = [];
 

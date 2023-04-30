@@ -4,5 +4,11 @@ services:
   web-scrape-notifier:
     container_name: web-scrape-notifier
     image: web-scrape-notifier:latest
-    #restart: always
     tty: true
+    volumes:
+      - type: bind
+        source: ./list.csv
+        target: /app/list.csv
+      - type: bind
+        source: ./result.csv
+        target: /app/result.csv
