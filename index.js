@@ -172,7 +172,7 @@ const renderHtml = async (url, selector) => {
   for (const config of configData) {
     const result = await renderHtml(config.url, config.selector);
     const prevResult = resultData.find(obj => obj.url === config.url);
-    if (prevResult && prevResult.result !== result.replace('"','')) {
+    if (prevResult && prevResult.result !== result.replaceAll('"','')) {
       console.log('send email');
       await sendEmail(
         '',
