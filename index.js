@@ -172,11 +172,12 @@ const renderHtml = async (url, selector) => {
   for (const config of configData) {
     const result = await renderHtml(config.url, config.selector);
     const prevResult = resultData.find(obj => obj.url === config.url);
-    if (prevResult && prevResult.result !== result) {
+    if (prevResult && prevResult.result !== result.replace('"','')) {
       console.log('send email');
       await sendEmail(
         '',
-        process.env.EMAIL_TO,
+        // process.env.EMAIL_TO,
+        config.email,
         process.env.EMAIL_FROM,
         `Change detected to ${config.url}`,
         `
