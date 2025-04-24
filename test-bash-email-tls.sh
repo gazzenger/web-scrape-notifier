@@ -15,6 +15,7 @@ function check_certs () {
   do
     echo -n "$ip:"
     #expiry_date=$( echo | openssl s_client -showcerts -servername $name -connect $ip:443 2>/dev/null | openssl x509 -inform pem -noout -enddate | cut -d "=" -f 2 )
+    # openssl s_client -verify_return_error -servername $name -connect $ip:25 -starttls smtp
     expiry_date=$( echo | openssl s_client -showcerts -servername $name -connect $ip:25 -starttls smtp 2>/dev/null | openssl x509 -inform pem -noout -enddate | cut -d "=" -f 2 )
     echo -n " $expiry_date";
     expiry_epoch=$( date -d "$expiry_date" +%s )
@@ -24,4 +25,3 @@ function check_certs () {
 }
 
 #check_certs stackoverflow.com mailasdf
-

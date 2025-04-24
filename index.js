@@ -262,7 +262,7 @@ const renderHtml = async (url, selector) => {
 
 const getTlsCert = async (config) => {
   return new Promise((resolve, reject) => {
-    openssl('s_client', prepareOpenSslParams(config.host,config.port), (err, buffer) => {
+    openssl('s_client', prepareOpenSslParams(config.host,config.port,true,true), (err, buffer) => {
       if (err) {
         return reject(err); // Reject the promise if there's an error
       }
@@ -272,12 +272,24 @@ const getTlsCert = async (config) => {
   })
 }
 
-const prepareOpenSslParams = (host,port) => {
+const prepareOpenSslParams = (host,port,showCerts=true,validate=false) => {
   let returnObj = {
-    'showcerts': true,
     'servername': host,
     'connect': `${host}:${port}`
   };
+
+  if (showCerts) {
+    returnObj = {
+      ...returnObj,
+      'showcerts': true,
+    };
+  }
+  if (validate) {
+    returnObj = {
+      ...returnObj,
+      'verify_return_error': true,
+    };
+  }
 
   return (Number(port) === 25) ? {
     ...returnObj,
@@ -285,7 +297,7 @@ const prepareOpenSslParams = (host,port) => {
   } : returnObj;
 };
 
-const validateCertExpiry = (cert, prevSslResult) => {
+const validateCertExpiry = (cert, prevSslResult, config) => {
   // verify cert has not already expired
   if (dayjs(cert.validToDate).isBefore(dayjs())) {
     console.log('cert already expired')
