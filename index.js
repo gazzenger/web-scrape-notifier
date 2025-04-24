@@ -2,11 +2,16 @@ import puppeteer from 'puppeteer';
 import { existsSync } from 'fs';
 import { readFile, writeFile } from 'fs/promises';
 
+import {exec as openssl} from 'openssl-wrapper';
+import crypto from 'crypto';
+import dayjs from 'dayjs'
+
 import nodemailer from 'nodemailer';
 
 import * as dotenv from 'dotenv';
 dotenv.config();
 
+const sslDayWarnings = [1,2,7,30]; // days between each set of warnings
 
 let transporter = null
 const createEmailConnection = async () => {
@@ -176,34 +181,34 @@ const renderHtml = async (url, selector) => {
     const prevResult = resultData.find(obj => obj.url === config.url);
     if (prevResult && prevResult.result !== result.replaceAll('"','')) {
       console.log('send email');
-      await sendEmail(
-        '',
-        // process.env.EMAIL_TO,
-        config.email,
-        process.env.EMAIL_FROM,
-        `Change detected to ${config.url}`,
-        `
-        <html>
-          <head>
-          </head>
-          <body>
-            <span>Website change detected to ${config.url}</span>
+//       await sendEmail(
+//         '',
+//         // process.env.EMAIL_TO,
+//         config.email,
+//         process.env.EMAIL_FROM,
+//         `Change detected to ${config.url}`,
+//         `
+//         <html>
+//           <head>
+//           </head>
+//           <body>
+//             <span>Website change detected to ${config.url}</span>
 
-            <div style="font-size: 8pt; margin-top: 10px;">
-              <p>
-This email has been created by the <a href="https://github.com/gazzenger/web-scrape-notifier" target="_blank">Web-Scrap-Notifier</a> Open Source project by Gary Namestnik
-<br/>
-Gary Namestnik does not accept any responsibility or liability for the accuracy, content, completeness, legality, or reliability of the information contained in this email.
-<br/>
-No warranties, promises and/or representations of any kind, expressed or implied, are given as to the nature, standard, accuracy or otherwise of the information provided in this email nor to the suitability or otherwise of the information.
-<br/>
-We shall not be liable for any loss or damage of whatever nature (direct, indirect, consequential, or other) whether arising in contract, tort or otherwise, which may arise as a result of your use of (or inability to use) the content from this email, or from your use of (or failure to use) the information in this email. This email provides links to other websites owned by third parties. The content of such third party sites is not within our control, and we cannot and will not take responsibility for the information or content thereon. Links to such third party sites are not to be taken as an endorsement by Gary Namestnik of the third party site, or any products promoted, offered or sold on the third party site, nor that such sites are free from computer viruses or anything else that has destructive properties. We cannot and do not take responsibility for the collection or use of personal data from any third party site. In addition, we will not accept responsibility for the accuracy of third party advertisements.
-            </p>
-          </div>
-          </body>
-        </html>
-        `
-      );
+//             <div style="font-size: 8pt; margin-top: 10px;">
+//               <p>
+// This email has been created by the <a href="https://github.com/gazzenger/web-scrape-notifier" target="_blank">Web-Scrap-Notifier</a> Open Source project by Gary Namestnik
+// <br/>
+// Gary Namestnik does not accept any responsibility or liability for the accuracy, content, completeness, legality, or reliability of the information contained in this email.
+// <br/>
+// No warranties, promises and/or representations of any kind, expressed or implied, are given as to the nature, standard, accuracy or otherwise of the information provided in this email nor to the suitability or otherwise of the information.
+// <br/>
+// We shall not be liable for any loss or damage of whatever nature (direct, indirect, consequential, or other) whether arising in contract, tort or otherwise, which may arise as a result of your use of (or inability to use) the content from this email, or from your use of (or failure to use) the information in this email. This email provides links to other websites owned by third parties. The content of such third party sites is not within our control, and we cannot and will not take responsibility for the information or content thereon. Links to such third party sites are not to be taken as an endorsement by Gary Namestnik of the third party site, or any products promoted, offered or sold on the third party site, nor that such sites are free from computer viruses or anything else that has destructive properties. We cannot and do not take responsibility for the collection or use of personal data from any third party site. In addition, we will not accept responsibility for the accuracy of third party advertisements.
+//             </p>
+//           </div>
+//           </body>
+//         </html>
+//         `
+//       );
 
     }
     newResults.push({
@@ -213,5 +218,94 @@ We shall not be liable for any loss or damage of whatever nature (direct, indire
   }
 
   await outputCSV('result.csv', newResults, ['url', 'result']);
+
+  // check SSL certificates
+  if(!existsSync('ssl-list.csv')) {
+    console.log("ssl-list.csv file not found");
+    return;
+  }
+  const sslConfigData = await parseCSV('ssl-list.csv', 'utf8', ['host','port','email']);
+  
+  let sslResultData = [];
+  if(existsSync('ssl-result.csv')) {
+    sslResultData = await parseCSV('ssl-result.csv', 'utf8', ['host', 'port', 'fingerprint', 'days']);
+  }
+
+  const newSslResultData = [];
+
+  for (const config of sslConfigData) {
+    const prevSslResult = sslResultData.find(obj => (obj.host === config.host) && (obj.port === config.port));
+    let cert = {fingerprint: -1}
+    let days = 365;
+
+    try {
+      cert = await getTlsCert(config);
+      days = validateCertExpiry(cert, prevSslResult);
+    }
+    catch (e) {
+      console.log('failed to retrieve ssl cert')
+      if (!prevSslResult || (prevSslResult && prevSslResult.fingerprint !== "-1")) {
+        console.log('send email')
+      }
+    }
+
+    newSslResultData.push({
+      host: config.host,
+      port: config.port,
+      fingerprint: cert.fingerprint,
+      days
+    });
+  }
+
+  await outputCSV('ssl-result.csv', newSslResultData, ['host', 'port', 'fingerprint', 'days']);
 })();
 
+const getTlsCert = async (config) => {
+  return new Promise((resolve, reject) => {
+    openssl('s_client', prepareOpenSslParams(config.host,config.port), (err, buffer) => {
+      if (err) {
+        return reject(err); // Reject the promise if there's an error
+      }
+      const cert = new crypto.X509Certificate(buffer);
+      resolve(cert);
+    })
+  })
+}
+
+const prepareOpenSslParams = (host,port) => {
+  let returnObj = {
+    'showcerts': true,
+    'servername': host,
+    'connect': `${host}:${port}`
+  };
+
+  return (Number(port) === 25) ? {
+    ...returnObj,
+    'starttls': 'smtp'
+  } : returnObj;
+};
+
+const validateCertExpiry = (cert, prevSslResult) => {
+  // verify cert has not already expired
+  if (dayjs(cert.validToDate).isBefore(dayjs())) {
+    console.log('cert already expired')
+    console.log('send an email')
+    return 0;
+  }
+
+  const prevDayCount = Number(prevSslResult?.days) || 365;
+  const dayCount = dayjs(cert.validToDate).diff(dayjs(), 'days');
+
+  const prevDayWarningIdx = sslDayWarnings.findIndex((item) => {
+    return item > prevDayCount;
+  });
+  const currentDayWarningIdx = sslDayWarnings.findIndex((item) => {
+    return item > dayCount;
+  });
+
+  if (prevDayWarningIdx !== currentDayWarningIdx) {
+    console.log('send an email')
+  }
+
+  return dayCount;
+}

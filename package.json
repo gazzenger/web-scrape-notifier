@@ -20,6 +20,7 @@
   "type": "module",
   "homepage": "https://github.com/gazzenger/web-scrape-notifier#readme",
   "dependencies": {
+    "dayjs": "^1.11.13",
     "dotenv": "^16.0.3",
     "nodemailer": "^6.9.1",
     "nodemon": "^2.0.22",
