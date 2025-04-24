@@ -23,6 +23,7 @@
     "dotenv": "^16.0.3",
     "nodemailer": "^6.9.1",
     "nodemon": "^2.0.22",
+    "openssl-wrapper": "^0.3.4",
     "puppeteer": "^19.10.1"
   }
 }

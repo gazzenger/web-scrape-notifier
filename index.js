@@ -133,8 +133,10 @@ const waitTillHTMLRendered = async (page, timeout = 30000) => {
 
 const renderHtml = async (url, selector) => {
   const browser = await puppeteer.launch({
-    headless: true,
-    executablePath: '/usr/bin/chromium-browser',
+    //headless: true,
+    headless: 'new',
+    //executablePath: '/usr/bin/chromium-browser',
+    executablePath: '/usr/bin/chromium',
     args: [
         "--disable-gpu",
         "--disable-dev-shm-usage",
