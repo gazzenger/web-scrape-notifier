@@ -19,6 +19,7 @@ const createEmailConnection = async () => {
     host: process.env.SMTP_HOST,
     port: Number(process.env.SMTP_PORT) || 0,
     secure: process.env.SMTP_TLS === 'yes' ? true : false,
+    requireTLS: process.env.SMTP_REQUIRETLS === 'yes' ? true : false,
     auth: {
         user: process.env.SMTP_USERNAME,
         pass: process.env.SMTP_PASSWORD,
@@ -51,9 +52,6 @@ const sendEmail = async (reqId,to,from,subject,html) => {
     html,
   });
 }
-
-
-
 
 // https://stackoverflow.com/a/41563966
 function csvToArray(text) {
@@ -180,36 +178,34 @@ const renderHtml = async (url, selector) => {
     const result = await renderHtml(config.url, config.selector);
     const prevResult = resultData.find(obj => obj.url === config.url);
     if (prevResult && prevResult.result !== result.replaceAll('"','')) {
-      console.log('send email');
-//       await sendEmail(
-//         '',
-//         // process.env.EMAIL_TO,
-//         config.email,
-//         process.env.EMAIL_FROM,
-//         `Change detected to ${config.url}`,
-//         `
-//         <html>
-//           <head>
-//           </head>
-//           <body>
-//             <span>Website change detected to ${config.url}</span>
+      await sendEmail(
+        '',
+        // process.env.EMAIL_TO,
+        config.email,
+        process.env.EMAIL_FROM,
+        `Change detected to ${config.url}`,
+        `
+        <html>
+          <head>
+          </head>
+          <body>
+            <span>Website change detected to ${config.url}</span>
 
-//             <div style="font-size: 8pt; margin-top: 10px;">
-//               <p>
-// This email has been created by the <a href="https://github.com/gazzenger/web-scrape-notifier" target="_blank">Web-Scrap-Notifier</a> Open Source project by Gary Namestnik
-// <br/>
-// Gary Namestnik does not accept any responsibility or liability for the accuracy, content, completeness, legality, or reliability of the information contained in this email.
-// <br/>
-// No warranties, promises and/or representations of any kind, expressed or implied, are given as to the nature, standard, accuracy or otherwise of the information provided in this email nor to the suitability or otherwise of the information.
-// <br/>
-// We shall not be liable for any loss or damage of whatever nature (direct, indirect, consequential, or other) whether arising in contract, tort or otherwise, which may arise as a result of your use of (or inability to use) the content from this email, or from your use of (or failure to use) the information in this email. This email provides links to other websites owned by third parties. The content of such third party sites is not within our control, and we cannot and will not take responsibility for the information or content thereon. Links to such third party sites are not to be taken as an endorsement by Gary Namestnik of the third party site, or any products promoted, offered or sold on the third party site, nor that such sites are free from computer viruses or anything else that has destructive properties. We cannot and do not take responsibility for the collection or use of personal data from any third party site. In addition, we will not accept responsibility for the accuracy of third party advertisements.
-//             </p>
-//           </div>
-//           </body>
-//         </html>
-//         `
-//       );
-
+            <div style="font-size: 8pt; margin-top: 10px;">
+              <p>
+This email has been created by the <a href="https://github.com/gazzenger/web-scrape-notifier" target="_blank">Web-Scrap-Notifier</a> Open Source project by Gary Namestnik
+<br/>
+Gary Namestnik does not accept any responsibility or liability for the accuracy, content, completeness, legality, or reliability of the information contained in this email.
+<br/>
+No warranties, promises and/or representations of any kind, expressed or implied, are given as to the nature, standard, accuracy or otherwise of the information provided in this email nor to the suitability or otherwise of the information.
+<br/>
+We shall not be liable for any loss or damage of whatever nature (direct, indirect, consequential, or other) whether arising in contract, tort or otherwise, which may arise as a result of your use of (or inability to use) the content from this email, or from your use of (or failure to use) the information in this email. This email provides links to other websites owned by third parties. The content of such third party sites is not within our control, and we cannot and will not take responsibility for the information or content thereon. Links to such third party sites are not to be taken as an endorsement by Gary Namestnik of the third party site, or any products promoted, offered or sold on the third party site, nor that such sites are free from computer viruses or anything else that has destructive properties. We cannot and do not take responsibility for the collection or use of personal data from any third party site. In addition, we will not accept responsibility for the accuracy of third party advertisements.
+            </p>
+          </div>
+          </body>
+        </html>
+        `
+      );
     }
     newResults.push({
       url: config.url,
@@ -240,12 +236,38 @@ const renderHtml = async (url, selector) => {
 
     try {
       cert = await getTlsCert(config);
-      days = validateCertExpiry(cert, prevSslResult);
+      days = await validateCertExpiry(cert, prevSslResult, config);
     }
     catch (e) {
-      console.log('failed to retrieve ssl cert')
       if (!prevSslResult || (prevSslResult && prevSslResult.fingerprint !== "-1")) {
-        console.log('send email')
+        await sendEmail(
+          '',
+          // process.env.EMAIL_TO,
+          config.email,
+          process.env.EMAIL_FROM,
+          `Failed to retrieve SSL certificate`,
+          `
+          <html>
+            <head>
+            </head>
+            <body>
+              <span>Failed to retrieve SSL Certificate for ${config.host}:${config.port}</span>
+
+              <div style="font-size: 8pt; margin-top: 10px;">
+                <p>
+  This email has been created by the <a href="https://github.com/gazzenger/web-scrape-notifier" target="_blank">Web-Scrap-Notifier</a> Open Source project by Gary Namestnik
+  <br/>
+  Gary Namestnik does not accept any responsibility or liability for the accuracy, content, completeness, legality, or reliability of the information contained in this email.
+  <br/>
+  No warranties, promises and/or representations of any kind, expressed or implied, are given as to the nature, standard, accuracy or otherwise of the information provided in this email nor to the suitability or otherwise of the information.
+  <br/>
+  We shall not be liable for any loss or damage of whatever nature (direct, indirect, consequential, or other) whether arising in contract, tort or otherwise, which may arise as a result of your use of (or inability to use) the content from this email, or from your use of (or failure to use) the information in this email. This email provides links to other websites owned by third parties. The content of such third party sites is not within our control, and we cannot and will not take responsibility for the information or content thereon. Links to such third party sites are not to be taken as an endorsement by Gary Namestnik of the third party site, or any products promoted, offered or sold on the third party site, nor that such sites are free from computer viruses or anything else that has destructive properties. We cannot and do not take responsibility for the collection or use of personal data from any third party site. In addition, we will not accept responsibility for the accuracy of third party advertisements.
+              </p>
+            </div>
+            </body>
+          </html>
+          `
+        );
       }
     }
 
@@ -297,11 +319,38 @@ const prepareOpenSslParams = (host,port,showCerts=true,validate=false) => {
   } : returnObj;
 };
 
-const validateCertExpiry = (cert, prevSslResult, config) => {
+const validateCertExpiry = async (cert, prevSslResult, config) => {
   // verify cert has not already expired
   if (dayjs(cert.validToDate).isBefore(dayjs())) {
-    console.log('cert already expired')
-    console.log('send an email')
+    await sendEmail(
+      '',
+      // process.env.EMAIL_TO,
+      config.email,
+      process.env.EMAIL_FROM,
+      `ALERT!! SSL Certificate Expired`,
+      `
+      <html>
+        <head>
+        </head>
+        <body>
+          <span>The SSL certificate for ${config.host}:${config.port} has expired, please update.</span>
+
+          <div style="font-size: 8pt; margin-top: 10px;">
+            <p>
+This email has been created by the <a href="https://github.com/gazzenger/web-scrape-notifier" target="_blank">Web-Scrap-Notifier</a> Open Source project by Gary Namestnik
+<br/>
+Gary Namestnik does not accept any responsibility or liability for the accuracy, content, completeness, legality, or reliability of the information contained in this email.
+<br/>
+No warranties, promises and/or representations of any kind, expressed or implied, are given as to the nature, standard, accuracy or otherwise of the information provided in this email nor to the suitability or otherwise of the information.
+<br/>
+We shall not be liable for any loss or damage of whatever nature (direct, indirect, consequential, or other) whether arising in contract, tort or otherwise, which may arise as a result of your use of (or inability to use) the content from this email, or from your use of (or failure to use) the information in this email. This email provides links to other websites owned by third parties. The content of such third party sites is not within our control, and we cannot and will not take responsibility for the information or content thereon. Links to such third party sites are not to be taken as an endorsement by Gary Namestnik of the third party site, or any products promoted, offered or sold on the third party site, nor that such sites are free from computer viruses or anything else that has destructive properties. We cannot and do not take responsibility for the collection or use of personal data from any third party site. In addition, we will not accept responsibility for the accuracy of third party advertisements.
+          </p>
+        </div>
+        </body>
+      </html>
+      `
+    );
+
     return 0;
   }
 
@@ -316,8 +365,34 @@ const validateCertExpiry = (cert, prevSslResult, config) => {
   });
 
   if (prevDayWarningIdx !== currentDayWarningIdx) {
-    console.log('send an email')
-  }
+    await sendEmail(
+      '',
+      // process.env.EMAIL_TO,
+      config.email,
+      process.env.EMAIL_FROM,
+      `SSL Certificate Expiry`,
+      `
+      <html>
+        <head>
+        </head>
+        <body>
+          <span>SSL certificate expiry in ${dayCount} days for ${config.host}:${config.port}</span>
 
+          <div style="font-size: 8pt; margin-top: 10px;">
+            <p>
+This email has been created by the <a href="https://github.com/gazzenger/web-scrape-notifier" target="_blank">Web-Scrap-Notifier</a> Open Source project by Gary Namestnik
+<br/>
+Gary Namestnik does not accept any responsibility or liability for the accuracy, content, completeness, legality, or reliability of the information contained in this email.
+<br/>
+No warranties, promises and/or representations of any kind, expressed or implied, are given as to the nature, standard, accuracy or otherwise of the information provided in this email nor to the suitability or otherwise of the information.
+<br/>
+We shall not be liable for any loss or damage of whatever nature (direct, indirect, consequential, or other) whether arising in contract, tort or otherwise, which may arise as a result of your use of (or inability to use) the content from this email, or from your use of (or failure to use) the information in this email. This email provides links to other websites owned by third parties. The content of such third party sites is not within our control, and we cannot and will not take responsibility for the information or content thereon. Links to such third party sites are not to be taken as an endorsement by Gary Namestnik of the third party site, or any products promoted, offered or sold on the third party site, nor that such sites are free from computer viruses or anything else that has destructive properties. We cannot and do not take responsibility for the collection or use of personal data from any third party site. In addition, we will not accept responsibility for the accuracy of third party advertisements.
+          </p>
+        </div>
+        </body>
+      </html>
+      `
+    );
+  }
   return dayCount;
 }
