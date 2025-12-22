@@ -5,6 +5,7 @@
   "main": "index.ts",
   "scripts": {
     "start": "node index.js",
+    "netstat": "node netstat.js",
     "start:dev": "nodemon index.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
