@@ -70,7 +70,7 @@ const sendEmail = async (reqId,to,from,subject,html) => {
 
     await sendEmail(
         '',
-        process.env.EMAIL_FROM,
+        process.env.EMAIL_TO,
         process.env.EMAIL_FROM,
         `Network usage on ${process.env.SMTP_HOST} for ${currentMonth}`,
         `
