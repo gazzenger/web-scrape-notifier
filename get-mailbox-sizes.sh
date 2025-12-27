@@ -1,7 +1,7 @@
 #!/bin/sh
 # This script outputs virtual mailbox sizes
 DIRECTORY=/var/mail/vhosts
-OUTPUTLOCATION=/opt/wsn/mailbox-sizes.out
+OUTPUTLOCATION=/opt/wsn/mailbox-sizes.csv
 OUTPUTFILEOWNER=wsn
 
 if [ $(/usr/bin/id -u) -ne 0 ]; then
@@ -19,7 +19,7 @@ if [ -d "$DIRECTORY" ]; then
         do
             email=${email%*/}
             folderSize=$(du -s $email | cut -f 1)
-            echo "${email##*/}@${domain##*/} ${folderSize}" >> $OUTPUTLOCATION
+            echo "${email##*/}@${domain##*/},${folderSize}" >> $OUTPUTLOCATION
         done
     done
 fi

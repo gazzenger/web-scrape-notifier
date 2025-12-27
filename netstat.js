@@ -50,6 +50,7 @@ const sendEmail = async (reqId,to,from,subject,html) => {
 
 
 (async () => {
+    const today = dayjs().format('YYYY-MM-DD');
     const startOfMonth = dayjs().subtract(1, 'days').startOf('month').format('YYYY-MM-DD');
     const endOfMonth   = dayjs().subtract(1, 'days').endOf('month').format('YYYY-MM-DD');
     const currentMonth = dayjs(startOfMonth).format('MMMM');
@@ -72,13 +73,13 @@ const sendEmail = async (reqId,to,from,subject,html) => {
         '',
         process.env.EMAIL_TO,
         process.env.EMAIL_FROM,
-        `Network usage on ${process.env.SMTP_HOST} for ${currentMonth}`,
+        `Network usage on ${process.env.SMTP_HOST} for ${currentMonth} as of ${today}`,
         `
         <html>
         <head>
         </head>
         <body>
-            <span>Network usage on host ${process.env.SMTP_HOST} for ${currentMonth} going through NIC ${process.env.DEFAULT_NIC} is as follows:</span>
+            <span>Network usage on host ${process.env.SMTP_HOST} for ${currentMonth} (as of ${today}) going through NIC ${process.env.DEFAULT_NIC} is as follows:</span>
             <ul>
                 <li>Tx: ${sumTxMb.toFixed(2)} MB</li>
                 <li>Rx: ${sumRxMb.toFixed(2)} MB</li>

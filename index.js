@@ -70,7 +70,7 @@ function csvToArray(text) {
     return ret;
 };
 
-const parseCSV = async (filepath, encoding, keys) => {
+export const parseCSV = async (filepath, encoding, keys) => {
   const textContent = await readFile(filepath, encoding);
   const rows = csvToArray(textContent);
 
@@ -138,8 +138,8 @@ const renderHtml = async (url, selector) => {
   const browser = await puppeteer.launch({
     //headless: true,
     headless: 'new',
-    //executablePath: '/usr/bin/chromium-browser',
-    executablePath: '/usr/bin/chromium',
+    executablePath: '/usr/bin/chromium-browser',
+    // executablePath: '/usr/bin/chromium',
     args: [
         "--disable-gpu",
         "--disable-dev-shm-usage",
