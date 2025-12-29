@@ -1,6 +1,5 @@
 import util from "node:util" ;
 import { exec } from "node:child_process";
-import dayjs from 'dayjs'
 import nodemailer from 'nodemailer';
 
 import * as dotenv from 'dotenv';
@@ -12,9 +11,9 @@ import { parseCSV } from './index.js';
 
 let execute = util.promisify(exec);
 
-const criticalThreshold = 0.0000009;
-const warningThreshold = 0.0000008;
-const infoThreshold = 0.0000007;
+const criticalThreshold = 0.9;
+const warningThreshold = 0.8;
+const infoThreshold = 0.7;
 
 
 let transporter = null
