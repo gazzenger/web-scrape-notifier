@@ -140,6 +140,7 @@ const renderHtml = async (url, selector) => {
     // headless: 'new',
     executablePath: '/usr/bin/chromium-browser',
     // executablePath: '/usr/bin/chromium',
+    userDataDir: '/home/wsn',
     args: [
         "--disable-gpu",
         "--disable-dev-shm-usage",
